@@ -1,0 +1,91 @@
+local player = game.Players.LocalPlayer
+
+local AdidasAnimations = {
+	Idle = "rbxassetid://126354114956642",
+	Walk = "rbxassetid://619537468",
+	Run = "rbxassetid://619536621",
+	Jump = "rbxassetid://115715495289805",
+	Fall = "rbxassetid://93993406355955",
+	Climb = "rbxassetid://123695349157584",
+	Swim = "rbxassetid://ID_SWIM",
+	SwimIdle = "rbxassetid://ID_SWIM_IDLE",
+	Sit = "rbxassetid://ID_SIT"
+}
+
+local tracks = {}
+
+local function stopAll()
+	for _, track in pairs(tracks) do
+		pcall(function()
+			track:Stop()
+			track:Destroy()
+		end)
+	end
+	table.clear(tracks)
+end
+
+local function load(character)
+	local humanoid = character:WaitForChild("Humanoid")
+	local animator = humanoid:WaitForChild("Animator")
+
+	stopAll()
+
+	for name, id in pairs(AdidasAnimations) do
+		local anim = Instance.new("Animation")
+		anim.AnimationId = id
+
+		local track = animator:LoadAnimation(anim)
+		track.Priority = Enum.AnimationPriority.Movement
+		track.Looped = (name ~= "Jump" and name ~= "Fall")
+
+		tracks[name] = track
+	end
+
+	-- Estados
+	humanoid.Running:Connect(function(speed)
+		if speed > 0 then
+			tracks.Walk:Play()
+		else
+			tracks.Idle:Play()
+		end
+	end)
+
+	humanoid.Jumping:Connect(function()
+		tracks.Jump:Play()
+	end)
+
+	humanoid.FreeFalling:Connect(function(active)
+		if active then
+			tracks.Fall:Play()
+		end
+	end)
+
+	humanoid.Climbing:Connect(function(speed)
+		if speed > 0 then
+			tracks.Climb:Play()
+		end
+	end)
+
+	humanoid.Seated:Connect(function(active)
+		if active then
+			tracks.Sit:Play()
+		end
+	end)
+
+	humanoid.Swimming:Connect(function(speed)
+		if speed > 0 then
+			tracks.Swim:Play()
+		else
+			tracks.SwimIdle:Play()
+		end
+	end)
+
+	-- Idle inicial
+	tracks.Idle:Play()
+end
+
+if player.Character then
+	load(player.Character)
+end
+
+player.CharacterAdded:Connect(load)
